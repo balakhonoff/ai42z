@@ -1,6 +1,7 @@
 from flask import Flask, render_template_string
 from threading import Thread, Lock
 import webbrowser
+import logging
 
 app = Flask(__name__)
 messages = []  # Store messages persistently
@@ -21,18 +22,24 @@ HTML_TEMPLATE = """
         pre { white-space: pre-wrap; margin: 0; }
     </style>
     <script>
+        let previousData = [];
+        
         function updateMessages() {
             fetch('/get_messages')
                 .then(response => response.json())
                 .then(data => {
-                    const container = document.getElementById('messages');
-                    container.innerHTML = '';
-                    data.forEach(msg => {
-                        const div = document.createElement('div');
-                        div.className = `message ${msg.role}`;
-                        div.innerHTML = `<strong>${msg.role}:</strong><pre>${msg.content}</pre>`;
-                        container.appendChild(div);
-                    });
+                    // Only update if there are messages and they're different from previous
+                    if (data.length > 0 && JSON.stringify(data) !== JSON.stringify(previousData)) {
+                        const container = document.getElementById('messages');
+                        container.innerHTML = '';
+                        data.forEach(msg => {
+                            const div = document.createElement('div');
+                            div.className = `message ${msg.role}`;
+                            div.innerHTML = `<strong>${msg.role}:</strong><pre>${msg.content}</pre>`;
+                            container.appendChild(div);
+                        });
+                        previousData = data;
+                    }
                 });
         }
         setInterval(updateMessages, 1000);
@@ -65,7 +72,15 @@ def clear_messages():
         messages.clear()
 
 def run_flask():
-    app.run(port=5050)
+    # Disable Flask's logging
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
+    
+    # Disable Flask's internal messages
+    app.logger.disabled = True
+    
+    # Run Flask without debug messages
+    app.run(port=5050, debug=False)
 
 def start_monitor():
     thread = Thread(target=run_flask, daemon=True)
