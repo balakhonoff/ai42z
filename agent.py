@@ -171,7 +171,7 @@ async def call_llm():
 async def execute_action(action_id: int, action_input: str, monitor: TwitterMonitor):
     try:
         if action_id == 0:
-            result = "No action taken because your response was not the actual JSON with a choice of command. Try again with correct JSON structure."
+            result = "No action taken."#. because your response was not the actual JSON with a choice of command. Try again with correct JSON structure."
         elif action_id == 1:
             search_query = action_input if action_input else "AI agents OR artificial intelligence agents OR autonomous agents"
             tweets = await monitor.fetch_ai_tweets(30, search_query)
@@ -207,11 +207,6 @@ async def run_agent_loop(monitor: TwitterMonitor):
     global last_action_result
 
     while True:
-        new_user_messages = read_user_messages()
-        for umsg in new_user_messages:
-            add_chat_message("user", umsg)
-            add_message("user", umsg)
-
         user_content = ""
         if last_action_result:
             user_content += f"[PREVIOUS COMMAND RESULT]\n{last_action_result}\n\n"
@@ -250,10 +245,12 @@ async def main():
 
     await application.initialize()
     await application.start()
+    await application.updater.start_polling()
 
     try:
         await run_agent_loop(monitor)
     finally:
+        await application.updater.stop()
         await application.stop()
         await application.shutdown()
 
