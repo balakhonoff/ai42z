@@ -28,7 +28,6 @@ TWITTER_USERNAME = os.getenv("TWITTER_USERNAME")
 TWITTER_PASSWORD = os.getenv("TWITTER_PASSWORD")
 
 # Global variables for state management
-chat_history = []
 last_action_result = None
 user_messages_queue = []
 
@@ -97,16 +96,10 @@ class TwitterMonitor:
             print(f"[TWITTER] Error fetching tweets: {e}")
             return []
 
-user_messages_queue = []
-
 async def telegram_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat and update.effective_chat.id == TELEGRAM_CHAT_ID:
         text = update.message.text
         user_messages_queue.append(text)
-        add_message(
-            role="user",
-            content=text
-        )
         print(f"[TELEGRAM IN]: {text}")
         print(f"[DEBUG] Message added to queue. Queue size: {len(user_messages_queue)}")
 
@@ -121,21 +114,15 @@ def read_user_messages():
     user_messages_queue.clear()
     return msgs
 
-current_strategy = "Selecting AI research tweets, responding with neutral scientific insight."
-
-history_operations: List[Dict] = []
-
 class ChatMessage:
-    def __init__(self, role: str, content: str, timestamp: datetime = None):
+    def __init__(self, role: str, content: str):
         self.role = role  # 'system', 'assistant', 'user'
         self.content = content
-        self.timestamp = timestamp or datetime.now()
 
     def to_dict(self):
         return {
             "role": self.role,
-            "content": self.content,
-            "timestamp": self.timestamp.isoformat()
+            "content": self.content
         }
 
 chat_history: List[ChatMessage] = []
@@ -143,71 +130,29 @@ chat_history: List[ChatMessage] = []
 def add_chat_message(role: str, content: str):
     chat_history.append(ChatMessage(role, content))
 
-system_prompt = """You are an AI agent assistant that helps with monitoring and interacting with AI-related content.
-
-Available commands:
-1 - get_tweets: Fetch new AI-related tweets (input: search query, e.g. "AI agents" or "machine learning")
-2 - send_message_to_customer: Send a message to the customer (input: message text)
-0 - do_nothing: Skip this turn (input: not needed)
-
-When customer messages are available, this additional command becomes available:
-3 - read_customer_messages: Read new messages from customer (input: not needed)
+def get_available_commands():
+    return f"""[AVAILABLE COMMANDS]
+1 - get_tweets: Fetch new tweets with the topic you choose via seach query (input: search query)
+2 - send_message_to_customer: Send a message to the customer with a tweet, it's link (URL) and your proposal on how to reply (input: message text)
+3 - {"read_customer_messages (new messages from the customer are available now)" if len(user_messages_queue) > 0 else "read_customer_messages (no new messages at the moment)"}: Read new messages from customer if they are availabe - you'll see the mark about it near this command (no input needed) 
+0 - do_nothing: Skip this turn (no input needed)
 
 Please respond with exactly one command in JSON format:
-{"command": <int>, "input": "<string>"}
+{{"command": (int), "input": "(string)"}} for example {{"command": 1, "input": "ai agents github"}}
+NEVER RESPOND WITH THE PLAIN TEXT! ONLY JSON!"""
 
-Guidelines:
-1. For get_tweets: provide only the search terms
-2. For send_message_to_customer, format tweet messages as:
-   ```
-   Tweet by @username:
-   <tweet_text>
+system_prompt = """You are an AI agent assistant that helps to the customer reply to interesting tweets related to AI agents development.
 
-   Link: https://twitter.com/username/status/<tweet_id>
+Each request you receive will have this structure:
 
-   Suggested reply:
-   <your proposed reply>
-   ```
-3. No explanations needed, just the JSON command
-"""
+[PREVIOUS COMMAND RESULT]
+(If there was a previous command, its result will appear here. Like if you ask for )
 
-def build_user_message():
-    # Convert chat history to prompt
-    messages = []
-    
-    # Always start with system prompt
-    messages.append({"role": "system", "content": system_prompt})
-    
-    # Add chat history in the correct sequence
-    for msg in chat_history[-HISTORY_LIMIT:]:
-        messages.append({
-            "role": msg.role,
-            "content": msg.content
-        })
-    
-    # Add current command list
-    user_prompt = """Available commands:
-1 - get_tweets: Fetch new AI-related tweets
-2 - send_message_to_customer: Send a message
-3 - read_customer_messages: Read new messages (if available)
-0 - do_nothing: Skip this turn
+""" + get_available_commands()
 
-Please respond with exactly one command in JSON format with numeric command:
-{"command": 1, "input": "search terms"}"""
-
-    if last_action_result:
-        user_prompt = f"{last_action_result}\n\n{user_prompt}"
-        
-    messages.append({
-        "role": "user",
-        "content": user_prompt
-    })
-    
-    return messages
-
-async def call_llm(monitor: TwitterMonitor):
-    messages = build_user_message()
-    
+async def call_llm():
+    # Просто берем всю историю и отправляем в LLM
+    messages = [msg.to_dict() for msg in chat_history]
     try:
         response = await asyncio.get_event_loop().run_in_executor(None, lambda: openai.ChatCompletion.create(
             model=MODEL_NAME,
@@ -215,50 +160,24 @@ async def call_llm(monitor: TwitterMonitor):
             **generation_kwargs
         ))
         generated = response.choices[0].message.content.strip()
-        
-        # Add assistant's response to history
-        add_chat_message("assistant", generated)
-        
-        # Execute action and get result
-        try:
-            parsed = json.loads(generated)
-            action_id = parsed.get("command", 0)
-            if not isinstance(action_id, int):
-                action_id = 0
-            action_input = parsed.get("input", "")
-            
-            # Get action result and store it
-            global last_action_result
-            last_action_result = await execute_action(action_id, action_input, monitor)
-            
-        except Exception as e:
-            error_msg = f"Error parsing/executing command: {str(e)}"
-            last_action_result = error_msg
-        
-        # Display the current state
-        clear_messages()
-        for msg in messages:  # Show all history including system prompt
-            add_message(msg["role"], msg["content"])
-        add_message("assistant", generated)  # Show current response
-        
+
+        add_chat_message("assistant", generated)  # Сохраняем ответ ассистента
         return generated
-        
     except Exception as e:
         error_msg = f"[ERROR] LLM call failed: {e}"
         print(error_msg)
-        last_action_result = error_msg
         return '{"command":0,"input":""}'
 
 async def execute_action(action_id: int, action_input: str, monitor: TwitterMonitor):
     try:
         if action_id == 0:
-            result = "No action taken."
+            result = "No action taken because your response was not the actual JSON with a choice of command. Try again with correct JSON structure."
         elif action_id == 1:
             search_query = action_input if action_input else "AI agents OR artificial intelligence agents OR autonomous agents"
             tweets = await monitor.fetch_ai_tweets(30, search_query)
             tweet_data = []
             for t in tweets:
-                tweet_data.append({"id": t.id, "text": t.text, "author": t.user.screen_name})
+                tweet_data.append({"id": t.id, "text": t.text, "author": t.user.screen_name, "link": f"https://x.com/{t.user.screen_name}/status/{t.id}"})
             result = f"Fetched tweets: {json.dumps(tweet_data, ensure_ascii=False)}"
         elif action_id == 2:
             send_message_to_user(action_input)
@@ -266,35 +185,62 @@ async def execute_action(action_id: int, action_input: str, monitor: TwitterMoni
         elif action_id == 3:
             msgs = read_user_messages()
             if msgs:
-                result = f"User messages: {msgs}"
+                result = f"Read user messages: {msgs}"
             else:
                 result = "No new user messages available."
         else:
             result = "Unknown action"
             
-        add_chat_message("user", result)  # Add result to chat history
         return result
     except Exception as e:
         error_msg = f"Error executing action {action_id}: {e}"
-        add_chat_message("user", error_msg)
         return error_msg
 
 async def run_agent_loop(monitor: TwitterMonitor):
     print("[AGENT] Starting main loop...")
+
+    chat_history.clear()
+    clear_messages()
+    add_chat_message("system", system_prompt)
+    add_message("system", system_prompt)
+
+    global last_action_result
+
     while True:
+        new_user_messages = read_user_messages()
+        for umsg in new_user_messages:
+            add_chat_message("user", umsg)
+            add_message("user", umsg)
+
+        user_content = ""
+        if last_action_result:
+            user_content += f"[PREVIOUS COMMAND RESULT]\n{last_action_result}\n\n"
+        user_content += get_available_commands()
+
+        add_chat_message("user", user_content)
+        add_message("user", user_content)
+
         print("[AGENT] Calling LLM...")
-        response_text = await call_llm(monitor)
-        
-        print("[AGENT] Done tick, waiting...")
+        response_text = await call_llm()  # Тут ассистент выбирает команду
+
+        # Парсим JSON
+        action_id, action_input = parse_llm_command(response_text)
+
+        # Выполняем команду
+        last_action_result = await execute_action(action_id, action_input, monitor)
+
+        # Обновляем монитор сообщений
+        clear_messages()
+        for msg in chat_history:
+            add_message(msg.role, msg.content)
+
+        print("[AGENT] Done tick, waiting 5 seconds...")
         await asyncio.sleep(5)
 
 async def main():
     start_monitor()
-    clear_messages()  # Clear at startup
-    
-    # Add system prompt at startup
-    add_message("system", system_prompt)
-    
+    clear_messages()
+
     monitor = TwitterMonitor(auth_info=TWITTER_USERNAME, password=TWITTER_PASSWORD)
     await monitor.initialize()
     
@@ -310,6 +256,22 @@ async def main():
     finally:
         await application.stop()
         await application.shutdown()
+
+def parse_llm_command(response_text: str) -> tuple[int, str]:
+    """Extract command and input from LLM response text, ignoring any additional text."""
+    try:
+        # Ищем любой валидный JSON в тексте
+        matches = re.finditer(r'\{[^{]*"command"\s*:\s*(\d+)[^{]*"input"\s*:\s*"([^"]*)"[^}]*\}', response_text)
+        # Берем последний найденный JSON (обычно это самый актуальный ответ)
+        for match in matches:
+            action_id = int(match.group(1))
+            action_input = match.group(2)
+            return action_id, action_input
+            
+        print(f"Could not find valid JSON command in response: {response_text}")
+    except Exception as e:
+        print(f"Error parsing assistant command: {e}")
+    return 0, ""
 
 if __name__ == "__main__":
     asyncio.run(main())
