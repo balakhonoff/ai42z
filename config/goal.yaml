@@ -1,0 +1,11 @@
+goal: "Make 2 cups of coffee"
+constraints:
+  - "Machine must be heated for 2 minutes before use"
+  - "Coffee must be added before brewing"
+  - "Must use 15 grams of coffee per cup"
+initial_context: "Coffee machine is powered off"
+success_criteria:
+  - "Coffee machine is powered on"
+  - "Machine has been heated for 2 minutes"
+  - "Correct amount of coffee (30g) has been added"
+  - "Brewing process has been started for 2 cups"

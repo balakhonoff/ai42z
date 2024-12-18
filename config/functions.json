@@ -1,0 +1,115 @@
+{
+  "functions": [
+    {
+      "id": 0,
+      "name": "throttle",
+      "description": "Pause execution for the next step",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "Explanation why execution should wait"
+          },
+          "wait_time": {
+            "type": "integer",
+            "description": "Time to wait in seconds"
+          }
+        },
+        "required": ["reason", "wait_time"]
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["accepted", "rejected"]
+          }
+        }
+      }
+    },
+    {
+      "id": 1,
+      "name": "power_coffee_machine",
+      "description": "Power on/off the coffee machine",
+      "parameters": {
+        "power": {
+          "type": "string",
+          "description": "Power state ('on' or 'off')",
+          "required": true,
+          "enum": ["on", "off"]
+        }
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["success", "error"]
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "name": "add_coffee",
+      "description": "Add coffee grounds to the machine. Machine must be powered on and heated.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "amount_grams": {
+            "type": "integer",
+            "description": "Amount of coffee to add in grams",
+            "minimum": 10,
+            "maximum": 30
+          }
+        },
+        "required": ["amount_grams"]
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["success", "error"]
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "name": "start_brewing",
+      "description": "Start brewing coffee. Requires machine to be heated and coffee to be added.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "cups": {
+            "type": "integer",
+            "description": "Number of cups to brew",
+            "minimum": 1,
+            "maximum": 4
+          }
+        },
+        "required": ["cups"]
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["success", "error"]
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  ]
+}
