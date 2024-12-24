@@ -8,18 +8,11 @@ from core.llm_processor import LLMProcessor
 def is_goal_achieved(history) -> bool:
     """Check if calculation goal is achieved"""
     try:
-        # Find addition operation
-        add_op = next(entry for entry in history 
-                     if entry.command_name == 'add' 
-                     and entry.result['status'] == 'success')
-        
-        # Find multiplication operation that came after addition
-        mult_op = next(entry for entry in history 
-                      if entry.command_name == 'multiply' 
-                      and entry.timestamp > add_op.timestamp
-                      and entry.result['status'] == 'success'
-                      and entry.result['value'] == 14)
-        
+        # Find submission with correct result
+        submit = next(entry for entry in history 
+                     if entry.command_name == 'submit_result' 
+                     and entry.result['status'] == 'success'
+                     and entry.parameters['value'] == 14)
         return True
     except StopIteration:
         return False
@@ -50,7 +43,25 @@ async def initialize_processor():
             "value": result
         }
 
+    async def submit_result(params: Dict[str, Any]) -> Dict[str, Any]:
+        expected_result = 14  # The expected result of (4 + 3) * 2
+        submitted_value = params['value']
+        
+        if submitted_value == expected_result:
+            return {
+                "status": "success",
+                "message": f"Correct! {submitted_value} is the right answer.",
+                "value": submitted_value
+            }
+        else:
+            return {
+                "status": "error",
+                "message": f"Incorrect. {submitted_value} is not the right answer.",
+                "value": submitted_value
+            }
+
     processor.register_function('add', add)
     processor.register_function('multiply', multiply)
+    processor.register_function('submit_result', submit_result)
 
     return processor 

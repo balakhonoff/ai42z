@@ -29,6 +29,17 @@
           "description": "Second number"
         }
       }
+    },
+    {
+      "id": 3,
+      "name": "submit_result",
+      "description": "Submit the final calculated result",
+      "parameters": {
+        "value": {
+          "type": "number",
+          "description": "The final calculated result"
+        }
+      }
     }
   ]
 } 

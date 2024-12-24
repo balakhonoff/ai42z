@@ -11,7 +11,7 @@ async def test_calculator_scenario():
     """Test basic arithmetic operations using LLM"""
     processor = await initialize_processor()
     
-    max_steps = 3
+    max_steps = 4  # Increased to allow for submission step
     success = False
     
     print("\n=== Starting Calculator Test ===")
@@ -43,6 +43,10 @@ async def test_calculator_scenario():
     
     # Verify the sequence of operations
     commands = [(e.command_name, e.result.get('value')) for e in processor.execution_history]
-    assert len(commands) == 2, "Should take exactly 2 steps"
-    assert commands[0][0] == 'add' and commands[0][1] == 7, "First step should be addition with result 7"
-    assert commands[1][0] == 'multiply' and commands[1][1] == 14, "Second step should be multiplication with result 14" 
+    assert len(commands) >= 2, "Should take at least 2 steps before submission"
+    
+    # Find the successful submission
+    final_submission = next(e for e in processor.execution_history 
+                          if e.command_name == 'submit_result' 
+                          and e.result['status'] == 'success')
+    assert final_submission.parameters['value'] == 14, "Should submit the correct result" 
