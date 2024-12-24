@@ -67,9 +67,10 @@ async def initialize_processor():
         if not possible:
             return {"status": "error", "message": error}
             
-        # Проверяем правильное количество кофе
-        last_coffee = next(entry for entry in reversed(processor.execution_history) 
-                         if entry.command_name == 'add_coffee')
+        # Check for correct amount of coffee
+        last_coffee = next((entry for entry in reversed(processor.execution_history) 
+                         if entry.command_name == 'add_coffee'
+                         and entry.result['status'] == 'success'), None)
         if last_coffee.parameters['amount_grams'] != params['cups'] * 15:
             return {
                 "status": "error", 
@@ -95,7 +96,7 @@ async def initialize_processor():
 def is_goal_achieved(history) -> bool:
     """Check if coffee making goal is achieved based on command history"""
     try:
-        # Проверяем последовательность команд
+        # Check command sequence
         power_on = next(entry for entry in history 
                        if entry.command_name == 'power_coffee_machine' 
                        and entry.parameters['power'] == 'on' 

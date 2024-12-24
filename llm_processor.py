@@ -9,7 +9,7 @@ import os
 from dotenv import load_dotenv
 import re
 
-load_dotenv()  # загружаем переменные из .env
+load_dotenv()  # download data from .env
 
 @dataclass
 class ExecutionHistoryEntry:
@@ -190,7 +190,6 @@ Analyze the current state and provide a single next action. Your response must b
 
             content = response.choices[0].message.content.strip()
 
-            # Новый код для извлечения JSON из ответа
             json_block_match = re.search(r"```json\s*(.*?)\s*```", content, flags=re.DOTALL | re.IGNORECASE)
             
             if json_block_match:
@@ -211,7 +210,7 @@ Analyze the current state and provide a single next action. Your response must b
                     }
                 }
 
-            # Добавляем пустой анализ если его нет
+            # Add empty analysis if it doesn't exist
             if 'analysis' not in result:
                 result['analysis'] = {
                     'reasoning': 'No reasoning provided',
