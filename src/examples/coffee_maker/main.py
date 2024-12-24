@@ -113,13 +113,13 @@ async def initialize_processor():
 def is_goal_achieved(history) -> bool:
     """Check if coffee making goal is achieved based on command history"""
     try:
-        # Check command sequence
+        # Check if machine was powered on
         power_on = next(entry for entry in history 
                        if entry.command_name == 'power_coffee_machine' 
                        and entry.parameters['power'] == 'on' 
                        and entry.result['status'] == 'success')
         
-        # Calculate total heating time
+        # Calculate total heating time after power on
         total_heating_time = 0
         for entry in history:
             if (entry.command_name == 'throttle' 
@@ -130,17 +130,21 @@ def is_goal_achieved(history) -> bool:
         
         if total_heating_time < 120:  # 2 minutes in seconds
             return False
-                       
+        
+        # Check if coffee was added with correct amount
         add_coffee = next(entry for entry in history 
                          if entry.command_name == 'add_coffee' 
                          and entry.parameters['amount_grams'] == 30 
-                         and entry.result['status'] == 'success')
-                         
+                         and entry.result['status'] == 'success'
+                         and entry.timestamp > power_on.timestamp)
+        
+        # Check if brewing was started with correct number of cups
         brew = next(entry for entry in history 
                    if entry.command_name == 'start_brewing' 
                    and entry.parameters['cups'] == 2 
-                   and entry.result['status'] == 'success')
-                   
+                   and entry.result['status'] == 'success'
+                   and entry.timestamp > add_coffee.timestamp)
+        
         return True
     except StopIteration:
         return False

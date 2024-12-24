@@ -151,6 +151,14 @@ goal:
 cd src
 pytest -v -s
 
+# Run basic examples (calculator and coffee maker)
+pytest -v -s tests/test_examples.py
+
+# Run individual examples
+pytest -v -s examples/calculator/tests/test_calculator.py
+pytest -v -s examples/coffee_maker/tests/test_coffee_maker.py
+pytest -v -s examples/maze_solver/tests/test_maze_solver.py
+
 # Run with detailed logs
 pytest -v -s examples/calculator/tests/test_calculator.py --log-cli-level=DEBUG
 ```
