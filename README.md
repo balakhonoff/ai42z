@@ -48,6 +48,44 @@ A more complex example simulating coffee machine control with state management. 
 
 Located in `src/examples/coffee_maker/`
 
+### Maze Solver
+A pathfinding agent that navigates through a maze to find the exit. This example demonstrates:
+- Spatial navigation and exploration
+- Decision making based on current state and history
+- Efficient pathfinding using look_around and move commands
+- Simple maze representation using ASCII characters:
+  - `#` - Wall
+  - `.` - Empty path
+  - `X` - Exit
+  - Starting position is always at (1, 1)
+
+Example maze:
+```
+#######
+#.....#  # Agent starts at (1,1)
+###.#.#
+###.###
+###.###
+#....X#  # Exit is marked with X
+####### 
+```
+
+The agent uses three commands:
+1. `look_around` - Check adjacent cells in all directions
+2. `move` - Move in a specified direction (north, south, east, west)
+3. `check_status` - Get current position and exploration statistics
+
+Success criteria:
+- Find and reach the exit cell marked as 'X'
+- Avoid walls and stay within maze boundaries
+- Use efficient exploration to minimize steps
+
+This example showcases how the framework can be used for spatial navigation tasks and demonstrates the agent's ability to:
+- Explore unknown environments
+- Make decisions based on partial information
+- Adapt strategy based on discovered obstacles
+- Track progress towards a goal
+
 ## Project Structure
 ```
 src/
