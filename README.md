@@ -1,82 +1,137 @@
 # ai42z - The First LLM Processor For Proactive Autonomous AI Agents
 
-**ai42z** is an experimental framework designed to enable Large Language Models (LLMs) to function as proactive, autonomous AI agents. Rather than simply answering questions, these agents continuously evaluate their environment, decide on the next best action, and perform it—all guided by predefined functions and goals. The result is an LLM-driven entity capable of dynamically adapting to real-time feedback and evolving conditions.
+**ai42z** is an experimental framework designed to enable Large Language Models (LLMs) to function as proactive, autonomous AI agents. Rather than simply answering questions, these agents continuously evaluate their environment, decide on the next best action, and perform it—all guided by predefined functions and goals.
+
+## Quick Start
+
+1. **Installation**:
+```bash
+# Clone the repository
+git clone <repository-url>
+cd ai42z
+
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set up your OpenAI API key
+export OPENAI_API_KEY='your-api-key-here'
+```
+
+2. **Try the Examples**:
+```bash
+cd src
+
+# Run the calculator example
+pytest -v -s examples/calculator/tests/test_calculator.py
+
+# Run the coffee maker example
+pytest -v -s examples/coffee_maker/tests/test_coffee_maker.py
+```
+
+## Available Examples
+
+### Calculator Agent
+A simple example demonstrating basic arithmetic operations and result submission. The agent:
+- Calculates (4 + 3) * 2 using available operations
+- Uses proper order of operations
+- Submits the final result for verification
+
+Located in `src/examples/calculator/`
+
+### Coffee Maker Agent
+A more complex example simulating coffee machine control with state management. The agent:
+- Powers on the machine
+- Waits for heating
+- Adds the correct amount of coffee
+- Starts brewing
+- Monitors operation sequence and conditions
+
+Located in `src/examples/coffee_maker/`
+
+## Project Structure
+```
+src/
+├── core/                     # Core framework components
+│   └── llm_processor.py     # Main LLM interaction logic
+├── examples/                 # Example implementations
+│   ├── calculator/          # Simple arithmetic calculator agent
+│   │   ├── config/         # Agent-specific configurations
+│   │   ├── tests/         # Agent-specific tests
+│   │   └── main.py        # Agent implementation
+│   └── coffee_maker/       # Coffee machine control agent
+```
+
+## Creating Your Own Agent
+
+1. Create a new directory under `examples/`:
+```bash
+mkdir -p src/examples/your_agent/{config,tests}
+touch src/examples/your_agent/{__init__.py,main.py}
+touch src/examples/your_agent/tests/{__init__.py,test_your_agent.py}
+```
+
+2. Define your functions in `config/functions.json`:
+```json
+{
+  "functions": [
+    {
+      "id": 1,
+      "name": "your_function",
+      "description": "Description of what it does",
+      "parameters": {
+        "param1": {
+          "type": "number",
+          "description": "Parameter description"
+        }
+      }
+    }
+  ]
+}
+```
+
+3. Define your goal in `config/goal.yaml`:
+```yaml
+goal:
+  description: "What your agent needs to achieve"
+  success_criteria:
+    - "List of criteria"
+```
+
+4. Implement your agent in `main.py` and create tests in `tests/test_your_agent.py`
 
 ## Key Concepts
 
-- **LLMs as Action-Oriented Agents**:  
-  Instead of producing a single final response, **ai42z** encourages LLMs to take incremental steps. Each step involves selecting and executing one action from a predefined set of commands. This transforms the LLM from a static question-answering tool into an iterative decision-maker—a true agent.
+- **LLMs as Action-Oriented Agents**: Transform LLMs from static responders into iterative decision-makers
+- **Goal-Driven Autonomy**: Agents work toward clear objectives through step-by-step actions
+- **Execution History**: Actions and outcomes are recorded and used for context in subsequent decisions
+- **Explainable Reasoning**: Agents articulate their decision-making process
 
-- **Goal-Driven Autonomy**:  
-  The system is steered by clear goals. The LLM receives a high-level objective and constraints, which direct its reasoning and decision-making. By analyzing its past actions, outcomes, and current conditions, the agent methodically works toward completing the defined tasks.
+## Development
 
-- **Execution History as Memory**:  
-  Every action taken and its outcome is recorded. This "memory" is fed back into the LLM as context in subsequent turns. Agents learn from successes and failures, refining their strategies and avoiding repeating mistakes.
+```bash
+# Run all tests
+cd src
+pytest -v -s
 
-- **Explainable Reasoning**:  
-  **ai42z** prompts the LLM to articulate why it chooses certain actions, providing transparency into its decision-making process. This fosters explainability and trust—essential qualities for deploying autonomous agents in real-world scenarios.
-
-## Potential Use Cases
-
-**ai42z** is not limited to simple examples. The framework is a springboard for building complex, proactive AI agents:
-
-- **Robotic Control and Automation**:  
-  An agent controlling a robot can query sensors, choose from movement commands, manipulate objects, and refine its approach based on new sensor data.
-
-- **Business Workflow Management**:  
-  Agents could manage multi-step business processes: approving invoices, requesting clarifications, escalating issues, and generating reports, all while adapting to changing policies or market conditions.
-
-- **Scientific Research Assistants**:  
-  In research settings, an agent might propose hypotheses, design experiments, request data analyses, and refine its research plan based on results, step by step.
-
-- **Complex Simulations and Games**:  
-  AI agents can navigate game worlds or simulations, making strategic decisions, exploring new areas, managing resources, and learning from their environment to achieve long-term goals.
-
-## Why ai42z?
-
-- **Proactive and Adaptive**:  
-  Instead of merely reacting to prompts, the agent sets the pace by continuously pursuing its goals. It adapts on the fly, learning from context and past actions.
-
-- **Structured Interaction**:  
-  Actions are well-defined and machine-executable. The LLM selects from a known set of functions, ensuring interoperability, reliability, and easier debugging.
-
-- **Scalable and Extensible**:  
-  By adding more functions and more complex goals, you can scale the capabilities of the agent. The same framework applies to a variety of domains with minimal changes to the core logic.
-
-## Getting Started
-
-1. **Installation**:  
-   Clone the repository and install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Define Your Agent’s World**:  
-   - Configure actions in `functions.json`.
-   - Set your goal in `goal.yaml`.
-   - Implement corresponding Python functions that represent the "tools" your agent can use.
-
-3. **Run a Scenario**:  
-   Launch a scenario (e.g., the coffee machine example) to see the agent think, choose actions, and evolve its approach. Over time, replace the test scenario with your own use case.
-
-4. **Refine and Expand**:  
-   Add more complex functions, introduce resource constraints, or integrate with external APIs. Watch as your agent becomes more capable and autonomous.
+# Run with detailed logs
+pytest -v -s examples/calculator/tests/test_calculator.py --log-cli-level=DEBUG
+```
 
 ## Contributing
 
-We welcome contributions to improve the framework’s architecture, add new examples, integrate different LLMs, or enhance the reasoning prompts. Open issues, submit pull requests, or join discussions to help shape the future of proactive AI agents.
+1. Fork the repository
+2. Create your feature branch
+3. Add your example or improvement
+4. Create a pull request
 
-## Roadmap
+## License
 
-- **More Realistic Domains**:  
-  Showcase agents functioning in real or simulated IoT environments, financial systems, and research pipelines.
-
-- **Enhanced Memory and State Management**:  
-  Integrate more advanced memory layers or external databases to allow agents to handle long-term planning and recall past experiences more effectively.
-
-- **Metrics and Benchmarks**:  
-  Develop benchmarks and metrics to measure agent performance, adaptability, and efficiency across various domains.
+[Your chosen license]
 
 ---
 
-**ai42z** pioneers a new paradigm in AI: empowering LLMs to act autonomously and proactively as agents rather than passive responders. With a scalable framework, explainable reasoning, and flexible architecture, **ai42z** sets the stage for the next generation of AI-driven automation and decision-making.
+For more detailed information about the framework's architecture, advanced use cases, and roadmap, please visit our [documentation](link-to-docs).
