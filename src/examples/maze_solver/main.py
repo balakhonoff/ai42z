@@ -63,7 +63,11 @@ async def initialize_processor():
         os.path.join(config_dir, 'functions.json'),
         os.path.join(config_dir, 'goal.yaml'),
         model_type="openai",
-        model_name="gpt-4o"
+        model_name="gpt-4o-mini",
+        ui_visibility=True,
+        history_size=10,
+        summary_interval=5,
+        summary_window=30
     )
     
     async def look_around(params: Dict[str, Any]) -> Dict[str, Any]:

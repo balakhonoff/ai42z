@@ -1,4 +1,4 @@
 goal:
-  description: "Navigate through a simple maze from starting position (1, 1) to reach the exit. The full game field is bounded by (0, 0) to (6, 6) square meaning that these are the walls. The maze contains walls (#), empty paths (.), and an exit (X). Use look_around command before each move to not miss the exit. Give more priority to the directions that you didn't explore yet. Try finding the exit with minimum steps."
+  description: "Navigate through a simple maze from starting position (1, 1) to reach the exit. The full game field is bounded by (0, 0) to (6, 6) square meaning that these are the walls. The maze contains walls (#), empty paths (.), and an exit (X). Use look_around command before each move to not miss the exit. Give more priority to the directions that you didn't explore yet. Try finding the exit with minimum steps. Don't do multiple times in a row look_around as it doesn't make sense - everytime the same result."
   success_criteria:
     - "You found the cell X and step into it"

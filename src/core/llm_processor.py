@@ -28,7 +28,11 @@ class LLMProcessor:
                  model_type: str = "openai",
                  history_size: int = 10,
                  model_name: str = "gpt-4o-mini",
-                 ui_visibility: bool = False):
+                 ui_visibility: bool = False,
+                 # Новый параметр: каждые A шагов делаем "summary" 
+                 summary_interval: int = 7,
+                 # Новый параметр: берём B последних шагов при обобщении
+                 summary_window: int = 15):
         """Initialize the LLM Processor
         
         Args:
@@ -38,6 +42,8 @@ class LLMProcessor:
             history_size: Number of recent actions to include in history (default: 10)
             model_name: Name of the model to use (default: gpt-4o-mini)
             ui_visibility: Whether to show prompt updates in web UI (default: False)
+            summary_interval: Every A steps generate best practices
+            summary_window: Take B last steps for best practice generation
         """
         self.functions_file = functions_file
         self.goal_file = goal_file
@@ -49,6 +55,12 @@ class LLMProcessor:
         self.goal: Dict = self._load_yaml(self.goal_file)
         self._load_available_functions()
         
+        # Дополнительные поля для "Best Practices"
+        self.summary_interval = summary_interval
+        self.summary_window = summary_window
+        self.steps_counter = 0  # сколько шагов уже совершено
+        self.best_practices = ""  # текущее итоговое значение Best Practices, useful findings and extracted helpful knowledge
+
         # UI visibility setup
         self.ui_visibility = ui_visibility
         if self.ui_visibility:
@@ -106,7 +118,11 @@ class LLMProcessor:
         # Convert history entries to dict format
         history_dicts = [self._entry_to_dict(entry) for entry in history]
         
+        # Включаем Best Practices в подсказку
         prompt = f"""# LLM Processor Task
+
+## Best Practices, Useful Findings and Extracted Helpful Knowledge
+{self.best_practices}
 
 ## Decision Making Guidelines
 - Analyze the execution history to understand what has been tried
@@ -179,6 +195,12 @@ Analyze the current state and provide a single next action. Your response must b
         )
         self.execution_history.append(entry)
 
+        # Увеличиваем счётчик шагов
+        self.steps_counter += 1
+        # Проверяем, не пора ли нам обобщать Best Practices
+        if self.steps_counter % self.summary_interval == 0:
+            await self._update_best_practices()
+
         return result
 
     async def get_next_action(self) -> Dict[str, Any]:
@@ -246,6 +268,19 @@ Analyze the current state and provide a single next action. Your response must b
                     'history_consideration': 'No history consideration provided'
                 }
 
+            # Handle case where reasoning is at the top level
+            if 'reasoning' in result and 'reasoning' not in result['analysis']:
+                result['analysis']['reasoning'] = result['reasoning']
+                del result['reasoning']  # Clean up top level
+
+            # Ensure all required fields are present in analysis
+            if 'reasoning' not in result['analysis']:
+                result['analysis']['reasoning'] = 'No explicit reasoning provided, proceeding with the action'
+            if 'current_situation' not in result['analysis']:
+                result['analysis']['current_situation'] = 'Current situation assessment not provided'
+            if 'history_consideration' not in result['analysis']:
+                result['analysis']['history_consideration'] = 'History consideration not provided'
+
             return result
 
         except Exception as e:
@@ -296,3 +331,83 @@ Analyze the current state and provide a single next action. Your response must b
             return False, "Failed to parse LLM response as JSON"
         except Exception as e:
             return False, f"Error processing LLM response: {str(e)}"
+
+    # Новый метод _update_best_practices (часть "idea #3")
+    async def _update_best_practices(self):
+        """Generate and merge new Best Practices, Useful Findings and Extracted Helpful Knowledge based on last 'summary_window' steps and existing knowledge."""
+        # 1. Берём последние B шагов
+        relevant_history = self.execution_history[-self.summary_window:] if len(self.execution_history) > 0 else []
+        
+        # 2. Генерируем новый фрагмент Best Practices (new_bp) и�� последних B шагов, goals и функций
+        new_bp_prompt = f"""
+You are tasked with extracting new 'best practices, useful findings and extracted helpful knowledge' from the recent {len(relevant_history)} steps of the agent. 
+Here are the details:
+
+## Goal:
+{json.dumps(self.goal, indent=2)}
+
+## Functions:
+{json.dumps(self.functions, indent=2)}
+
+## Recent Execution History (Last B={self.summary_window} steps):
+{json.dumps([self._entry_to_dict(e) for e in relevant_history], indent=2)}
+
+Please summarize any new best practices, useful findings and extracted helpful knowledge (concise bullet points) that are gleaned specifically from these steps.
+Return them in plain text.
+"""
+        # Запрашиваем у LLM
+        new_bp_content = await self._call_llm_for_bp(new_bp_prompt)
+        # На случай ошибок парсинга / пустого ответа
+        if not new_bp_content:
+            new_bp_content = "No new best practices, useful findings and extracted helpful knowledge found."
+
+        # 3. Теперь объединяем (merge) текущее self.best_practices и new_bp_content
+        merge_prompt = f"""
+You have two sets of best practices, useful findings and extracted helpful knowledge:
+
+1) The previous knowledge:
+{self.best_practices}
+
+2) The newly extracted knowledge:
+{new_bp_content}
+
+Please merge them into a single, coherent set of best practices, useful findings and extracted helpful knowledge. 
+Make sure to avoid duplication and preserve important details.
+"""
+        merged_bp = await self._call_llm_for_bp(merge_prompt)
+        if merged_bp:
+            self.best_practices = merged_bp.strip()
+        else:
+            # В случае ошибки сохраняем хоть что-то
+            self.best_practices = f"{self.best_practices}\n{new_bp_content}"
+
+    async def _call_llm_for_bp(self, prompt_text: str) -> str:
+        """
+        Вспомогательный метод для вызова LLM 
+        (запрашивает у модели текстовые Best Practices на основе prompt_text).
+        """
+        try:
+            if self.model_type == "local":
+                import openai
+                client = openai.OpenAI(
+                    base_url="http://127.0.0.1:1234/v1",
+                    api_key="lm-studio"
+                )
+            else:
+                from openai import OpenAI
+                client = OpenAI()
+
+            response = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[{"role": "user", "content": prompt_text}],
+                    **self.generation_kwargs
+                )
+            )
+
+            content = response.choices[0].message.content.strip()
+            return content
+        except Exception as e:
+            print(f"Error calling LLM for best practices: {e}")
+            return ""
