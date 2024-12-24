@@ -2,6 +2,20 @@
 
 **ai42z** is an experimental framework designed to enable Large Language Models (LLMs) to function as proactive, autonomous AI agents. Rather than simply answering questions, these agents continuously evaluate their environment, decide on the next best action, and perform it—all guided by predefined functions and goals.
 
+## Key Features
+
+### Proactive Decision Making
+- Continuous environment evaluation
+- Goal-driven autonomous actions
+- Step-by-step execution with clear reasoning
+
+### Long-Term Memory and Learning
+- Accumulates knowledge and insights during execution
+- Periodically summarizes and consolidates learnings
+- Uses accumulated knowledge to inform future decisions
+- Extracts best practices, useful findings, and helpful knowledge
+- Maintains a growing knowledge base that evolves with experience
+
 ## Quick Start
 
 1. **Installation**:
@@ -86,6 +100,40 @@ This example showcases how the framework can be used for spatial navigation task
 - Adapt strategy based on discovered obstacles
 - Track progress towards a goal
 
+## Advanced Features
+
+### Long-Term Memory System
+The framework includes a sophisticated long-term memory system that helps agents learn from experience:
+
+1. **Knowledge Accumulation**:
+   - Periodically analyzes recent actions and their outcomes
+   - Extracts useful patterns, strategies, and insights
+   - Merges new findings with existing knowledge
+
+2. **Memory Configuration**:
+   ```python
+   processor = LLMProcessor(
+       functions_file="config/functions.json",
+       goal_file="config/goal.yaml",
+       summary_interval=7,    # Update knowledge every 7 steps
+       summary_window=15      # Consider last 15 steps when learning
+   )
+   ```
+
+3. **Knowledge Integration**:
+   - Accumulated knowledge is included in each prompt
+   - Helps inform future decisions
+   - Enables learning from past experiences
+   - Improves decision quality over time
+
+4. **Visual Monitoring** (Optional):
+   ```python
+   processor = LLMProcessor(
+       # ... other parameters ...
+       ui_visibility=True    # Enable web UI to monitor prompts
+   )
+   ```
+
 ## Project Structure
 ```
 src/
@@ -143,6 +191,7 @@ goal:
 - **Goal-Driven Autonomy**: Agents work toward clear objectives through step-by-step actions
 - **Execution History**: Actions and outcomes are recorded and used for context in subsequent decisions
 - **Explainable Reasoning**: Agents articulate their decision-making process
+- **Continuous Learning**: Agents accumulate and apply knowledge from their experiences
 
 ## Development
 
