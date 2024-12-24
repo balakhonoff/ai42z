@@ -44,21 +44,11 @@ async def initialize_processor():
         }
 
     async def submit_result(params: Dict[str, Any]) -> Dict[str, Any]:
-        expected_result = 14  # The expected result of (4 + 3) * 2
-        submitted_value = params['value']
-        
-        if submitted_value == expected_result:
-            return {
-                "status": "success",
-                "message": f"Correct! {submitted_value} is the right answer.",
-                "value": submitted_value
-            }
-        else:
-            return {
-                "status": "error",
-                "message": f"Incorrect. {submitted_value} is not the right answer.",
-                "value": submitted_value
-            }
+        return {
+            "status": "success",
+            "message": f"Submitted result: {params['value']}",
+            "value": params['value']
+        }
 
     processor.register_function('add', add)
     processor.register_function('multiply', multiply)

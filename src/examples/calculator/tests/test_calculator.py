@@ -4,7 +4,21 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
-from examples.calculator.main import initialize_processor, is_goal_achieved
+from examples.calculator.main import initialize_processor
+
+EXPECTED_RESULT = 14  # The expected result of (4 + 3) * 2
+
+def is_goal_achieved(history) -> bool:
+    """Check if calculation goal is achieved with correct result"""
+    try:
+        # Find submission and verify the result
+        submit = next(entry for entry in history 
+                     if entry.command_name == 'submit_result' 
+                     and entry.result['status'] == 'success'
+                     and entry.parameters['value'] == EXPECTED_RESULT)
+        return True
+    except StopIteration:
+        return False
 
 @pytest.mark.asyncio
 async def test_calculator_scenario():
