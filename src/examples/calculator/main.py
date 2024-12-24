@@ -24,7 +24,8 @@ async def initialize_processor():
     processor = LLMProcessor(
         os.path.join(config_dir, 'functions.json'),
         os.path.join(config_dir, 'goal.yaml'),
-        model_type="openai"
+        model_type="openai",
+        ui_visibility=False
     )
     
     async def add(params: Dict[str, Any]) -> Dict[str, Any]:

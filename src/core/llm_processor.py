@@ -27,7 +27,8 @@ class LLMProcessor:
                  goal_file: str, 
                  model_type: str = "openai",
                  history_size: int = 10,
-                 model_name: str = "gpt-4o-mini"):
+                 model_name: str = "gpt-4o-mini",
+                 ui_visibility: bool = False):
         """Initialize the LLM Processor
         
         Args:
@@ -36,6 +37,7 @@ class LLMProcessor:
             model_type: Type of LLM to use
             history_size: Number of recent actions to include in history (default: 10)
             model_name: Name of the model to use (default: gpt-4o-mini)
+            ui_visibility: Whether to show prompt updates in web UI (default: False)
         """
         self.functions_file = functions_file
         self.goal_file = goal_file
@@ -46,6 +48,13 @@ class LLMProcessor:
         self.functions: Dict = self._load_json(self.functions_file)
         self.goal: Dict = self._load_yaml(self.goal_file)
         self._load_available_functions()
+        
+        # UI visibility setup
+        self.ui_visibility = ui_visibility
+        if self.ui_visibility:
+            from .web_display import PromptDisplay
+            self.prompt_display = PromptDisplay()
+            self.prompt_display.start()
         
         # LLM configuration
         if model_type == "local":
@@ -97,8 +106,7 @@ class LLMProcessor:
         # Convert history entries to dict format
         history_dicts = [self._entry_to_dict(entry) for entry in history]
         
-        prompt = f"""# LLM Processor Environment
-You are participating in an iterative decision-making task. Your role is to analyze the current state and determine the SINGLE NEXT optimal action. You are NOT expected to solve the entire task in one step. Instead, focus on choosing the most logical next action given the current state and history.
+        prompt = f"""# LLM Processor Task
 
 ## Decision Making Guidelines
 - Analyze the execution history to understand what has been tried
@@ -133,6 +141,11 @@ Analyze the current state and provide a single next action. Your response must b
     "expected_outcome": "What you expect this action to achieve towards the goal"
   }}
 }}"""
+
+        # Update web UI if enabled
+        if self.ui_visibility:
+            self.prompt_display.update_prompt(prompt)
+
         return prompt
 
     async def execute_command(self, command_id: int, parameters: Dict[str, Any], context: str) -> Dict[str, Any]:
