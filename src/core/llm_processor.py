@@ -22,15 +22,18 @@ class ExecutionHistoryEntry:
     context: str
 
 class LLMProcessor:
-    def __init__(self, functions_file: str, goal_file: str, model_type: str = "local"):
+    def __init__(self, functions_file: str, goal_file: str, model_type: str = "openai"):
         """Initialize the processor with function definitions and goal"""
-        self.functions: Dict = self._load_json(functions_file)
-        self.goal_config: Dict = self._load_yaml(goal_file)
-        self.execution_history: List[ExecutionHistoryEntry] = []
-        self.implementations: Dict[str, Callable] = {}
+        self.functions_file = functions_file  # Store the full path
+        self.goal_file = goal_file  # Store the full path
+        self.model_type = model_type
+        self.execution_history = []
+        self.implementations = {}  # Add this line to initialize the implementations dictionary
+        self.functions: Dict = self._load_json(self.functions_file)
+        self.goal: Dict = self._load_yaml(self.goal_file)
+        self._load_available_functions()  # This method needs to use self.functions_file
         
         # LLM configuration
-        self.model_type = model_type
         if model_type == "local":
             openai.api_base = "http://127.0.0.1:1234/v1"
             openai.api_key = "lm-studio"
@@ -47,8 +50,6 @@ class LLMProcessor:
             "temperature": 0.7,
             "top_p": 0.9
         }
-
-        self._load_available_functions()
 
     def _load_json(self, file_path: str) -> Dict:
         """Load JSON configuration file"""
@@ -119,7 +120,7 @@ Analyze the current state and provide a single next action. Your response must b
         
         return template.format(
             functions=json.dumps(self.functions, indent=2),
-            goal_config=json.dumps(self.goal_config, indent=2),
+            goal_config=json.dumps(self.goal, indent=2),
             history_size=history_size,
             history=json.dumps([self._entry_to_dict(e) for e in history_entries], indent=2)
         )
@@ -232,7 +233,7 @@ Analyze the current state and provide a single next action. Your response must b
             }
 
     def _load_available_functions(self):
-        with open('config/functions.json', 'r') as f:
+        with open(self.functions_file, 'r') as f:
             self.available_functions = json.load(f)
     
     def _validate_command_params(self, command_id: int, params: Dict[str, Any]) -> Tuple[bool, str]:

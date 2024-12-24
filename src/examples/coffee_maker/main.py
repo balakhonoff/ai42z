@@ -1,6 +1,11 @@
 # main.py
 from datetime import datetime, timedelta
-from llm_processor import LLMProcessor
+import sys
+import os
+
+# Add the src directory to the Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+from core.llm_processor import LLMProcessor
 from typing import Dict, Any
 
 def check_command_possibility(history, command_name: str) -> tuple[bool, str]:
@@ -36,7 +41,15 @@ def check_command_possibility(history, command_name: str) -> tuple[bool, str]:
     return True, ""
 
 async def initialize_processor():
-    processor = LLMProcessor('config/functions.json', 'config/goal.yaml', model_type="openai")
+    # Update paths to be relative to the coffee_maker example directory
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    config_dir = os.path.join(current_dir, 'config')
+    
+    processor = LLMProcessor(
+        os.path.join(config_dir, 'functions.json'),
+        os.path.join(config_dir, 'goal.yaml'),
+        model_type="openai"
+    )
     
     # Define function implementations
     async def power_coffee_machine(params: Dict[str, Any]) -> Dict[str, Any]:

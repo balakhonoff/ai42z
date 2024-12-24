@@ -1,11 +1,17 @@
 # test_processor_real.py
 import pytest
 from datetime import datetime, timedelta
-from main import (
+import json
+import sys
+import os
+
+# Add the src directory to the Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
+
+from examples.coffee_maker.main import (
     initialize_processor,
     is_goal_achieved
 )
-import json
 
 @pytest.mark.asyncio
 async def test_coffee_scenario_gpt4():
