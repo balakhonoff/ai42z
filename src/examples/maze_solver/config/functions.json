@@ -1,0 +1,86 @@
+{
+  "functions": [
+    {
+      "id": 0,
+      "name": "look_around",
+      "description": "Look at adjacent cells in all directions",
+      "parameters": {},
+      "returns": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["success", "error"]
+          },
+          "cells": {
+            "type": "object",
+            "properties": {
+              "north": {"type": "string"},
+              "south": {"type": "string"},
+              "east": {"type": "string"},
+              "west": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 1,
+      "name": "move",
+      "description": "Move in a specified direction",
+      "parameters": {
+        "direction": {
+          "type": "string",
+          "description": "Direction to move",
+          "enum": ["north", "south", "east", "west"],
+          "required": true
+        }
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["success", "error"]
+          },
+          "position": {
+            "type": "array",
+            "items": {"type": "integer"},
+            "minItems": 2,
+            "maxItems": 2
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "name": "check_status",
+      "description": "Check current position and visited cell count",
+      "parameters": {},
+      "returns": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["success", "error"]
+          },
+          "position": {
+            "type": "array",
+            "items": {"type": "integer"},
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "visited_count": {
+            "type": "integer"
+          },
+          "exit_position": {
+            "type": "array",
+            "items": {"type": "integer"},
+            "minItems": 2,
+            "maxItems": 2
+          }
+        }
+      }
+    }
+  ]
+} 

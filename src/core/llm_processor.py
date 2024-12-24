@@ -22,33 +22,45 @@ class ExecutionHistoryEntry:
     context: str
 
 class LLMProcessor:
-    def __init__(self, functions_file: str, goal_file: str, model_type: str = "openai"):
-        """Initialize the processor with function definitions and goal"""
-        self.functions_file = functions_file  # Store the full path
-        self.goal_file = goal_file  # Store the full path
+    def __init__(self, 
+                 functions_file: str, 
+                 goal_file: str, 
+                 model_type: str = "openai",
+                 history_size: int = 10,
+                 model_name: str = "gpt-4o-mini"):
+        """Initialize the LLM Processor
+        
+        Args:
+            functions_file: Path to functions configuration JSON
+            goal_file: Path to goal configuration YAML
+            model_type: Type of LLM to use
+            history_size: Number of recent actions to include in history (default: 10)
+            model_name: Name of the model to use (default: gpt-4o-mini)
+        """
+        self.functions_file = functions_file
+        self.goal_file = goal_file
         self.model_type = model_type
+        self.history_size = history_size
         self.execution_history = []
-        self.implementations = {}  # Add this line to initialize the implementations dictionary
+        self.implementations = {}
         self.functions: Dict = self._load_json(self.functions_file)
         self.goal: Dict = self._load_yaml(self.goal_file)
-        self._load_available_functions()  # This method needs to use self.functions_file
+        self._load_available_functions()
         
         # LLM configuration
         if model_type == "local":
             openai.api_base = "http://127.0.0.1:1234/v1"
             openai.api_key = "lm-studio"
-            # self.model_name = "hermes-3-llama-3.2-3b"
-            self.model_name = "gemma-2-2b-it"
-
+            self.model_name = model_name
         else:  # OpenAI
             openai.api_base = "https://api.openai.com/v1"
             openai.api_key = os.getenv("OPENAI_API_KEY")
-            self.model_name = "gpt-4o-mini"
+            self.model_name = model_name
 
         self.generation_kwargs = {
-            "max_tokens": 512,
-            "temperature": 0.7,
-            "top_p": 0.9
+            # "max_tokens": 512,
+            # "temperature": 0.7,
+            # "top_p": 0.9
         }
 
     def _load_json(self, file_path: str) -> Dict:
@@ -77,9 +89,15 @@ class LLMProcessor:
             "context": entry.context
         }
 
-    def generate_prompt(self, history_size: int = 5) -> str:
-        """Generate prompt for LLM based on current state and history"""
-        template = """# LLM Processor Environment
+    def generate_prompt(self) -> str:
+        """Generate prompt for LLM"""
+        # Get the last N entries from history
+        history = self.execution_history[-self.history_size:] if self.execution_history else []
+        
+        # Convert history entries to dict format
+        history_dicts = [self._entry_to_dict(entry) for entry in history]
+        
+        prompt = f"""# LLM Processor Environment
 You are participating in an iterative decision-making task. Your role is to analyze the current state and determine the SINGLE NEXT optimal action. You are NOT expected to solve the entire task in one step. Instead, focus on choosing the most logical next action given the current state and history.
 
 ## Decision Making Guidelines
@@ -90,13 +108,13 @@ You are participating in an iterative decision-making task. Your role is to anal
 - Do not try to plan multiple steps ahead - focus only on the immediate next action
 
 ## Available Commands
-{functions}
+{json.dumps(self.functions, indent=2)}
 
 ## Goal Configuration
-{goal_config}
+{json.dumps(self.goal, indent=2)}
 
-## Execution History (Last N={history_size} Actions)
-{history}
+## Execution History (Last N={self.history_size} Actions)
+{json.dumps(history_dicts, indent=2)}
 
 ## Your Response Format
 Analyze the current state and provide a single next action. Your response must be a JSON object:
@@ -115,15 +133,7 @@ Analyze the current state and provide a single next action. Your response must b
     "expected_outcome": "What you expect this action to achieve towards the goal"
   }}
 }}"""
-
-        history_entries = self.execution_history[-history_size:] if self.execution_history else []
-        
-        return template.format(
-            functions=json.dumps(self.functions, indent=2),
-            goal_config=json.dumps(self.goal, indent=2),
-            history_size=history_size,
-            history=json.dumps([self._entry_to_dict(e) for e in history_entries], indent=2)
-        )
+        return prompt
 
     async def execute_command(self, command_id: int, parameters: Dict[str, Any], context: str) -> Dict[str, Any]:
         """Execute a command and record it in history"""
@@ -159,8 +169,12 @@ Analyze the current state and provide a single next action. Your response must b
         return result
 
     async def get_next_action(self) -> Dict[str, Any]:
-        """Get next action from LLM"""
+        """Get the next action from the LLM"""
         prompt = self.generate_prompt()
+        
+        # Use only the last N actions in the prompt
+        history = self.execution_history[-self.history_size:] if self.execution_history else []
+        
         try:
             if self.model_type == "local":
                 import openai

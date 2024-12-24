@@ -22,13 +22,17 @@ def check_command_possibility(history, command_name: str) -> tuple[bool, str]:
         return False, "Machine is not powered on"
 
     if command_name == 'add_coffee':
-        # Check for successful throttle after power on
-        last_throttle = next((entry for entry in reversed(history) 
-                            if entry.command_name == 'throttle'
-                            and entry.result['status'] == 'accepted'
-                            and entry.timestamp > last_power.timestamp), None)
-        if not last_throttle:
-            return False, "Machine is not heated yet"
+        # Calculate total heating time from throttle commands after power on
+        total_heating_time = 0
+        for entry in history:
+            if (entry.command_name == 'throttle' 
+                and entry.result['status'] == 'accepted'
+                and entry.timestamp > last_power.timestamp
+                and 'wait_time' in entry.parameters):
+                total_heating_time += entry.parameters['wait_time']
+        
+        if total_heating_time < 120:  # 2 minutes in seconds
+            return False, f"Machine needs more heating time (current: {total_heating_time}s, required: 120s)"
             
     if command_name == 'start_brewing':
         # Check for successful coffee addition
@@ -114,10 +118,18 @@ def is_goal_achieved(history) -> bool:
                        if entry.command_name == 'power_coffee_machine' 
                        and entry.parameters['power'] == 'on' 
                        and entry.result['status'] == 'success')
-                       
-        throttle = next(entry for entry in history 
-                       if entry.command_name == 'throttle' 
-                       and entry.timestamp > power_on.timestamp)
+        
+        # Calculate total heating time
+        total_heating_time = 0
+        for entry in history:
+            if (entry.command_name == 'throttle' 
+                and entry.result['status'] == 'accepted'
+                and entry.timestamp > power_on.timestamp
+                and 'wait_time' in entry.parameters):
+                total_heating_time += entry.parameters['wait_time']
+        
+        if total_heating_time < 120:  # 2 minutes in seconds
+            return False
                        
         add_coffee = next(entry for entry in history 
                          if entry.command_name == 'add_coffee' 
