@@ -1,0 +1,34 @@
+{
+  "functions": [
+    {
+      "id": 1,
+      "name": "add",
+      "description": "Add two numbers",
+      "parameters": {
+        "a": {
+          "type": "number",
+          "description": "First number"
+        },
+        "b": {
+          "type": "number",
+          "description": "Second number"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "name": "multiply",
+      "description": "Multiply two numbers",
+      "parameters": {
+        "a": {
+          "type": "number",
+          "description": "First number"
+        },
+        "b": {
+          "type": "number",
+          "description": "Second number"
+        }
+      }
+    }
+  ]
+} 

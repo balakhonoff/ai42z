@@ -1,0 +1,48 @@
+import pytest
+import json
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
+from examples.calculator.main import initialize_processor, is_goal_achieved
+
+@pytest.mark.asyncio
+async def test_calculator_scenario():
+    """Test basic arithmetic operations using LLM"""
+    processor = await initialize_processor()
+    
+    max_steps = 3
+    success = False
+    
+    print("\n=== Starting Calculator Test ===")
+    
+    for step in range(max_steps):
+        print(f"\n=== Step {step + 1} of {max_steps} ===")
+        
+        response = await processor.get_next_action()
+        assert response is not None, "Should get valid response from LLM"
+        
+        print("\n=== Processed LLM Response ===")
+        print(json.dumps(response, indent=2))
+        
+        action = response['action']
+        result = await processor.execute_command(
+            action['command_id'],
+            action['parameters'],
+            response['analysis']['reasoning']
+        )
+        
+        print(f"Action result: {result}\n")
+        
+        if is_goal_achieved(processor.execution_history):
+            success = True
+            print("\n=== Goal Achieved! ===")
+            break
+    
+    assert success, "Should complete calculation process"
+    
+    # Verify the sequence of operations
+    commands = [(e.command_name, e.result.get('value')) for e in processor.execution_history]
+    assert len(commands) == 2, "Should take exactly 2 steps"
+    assert commands[0][0] == 'add' and commands[0][1] == 7, "First step should be addition with result 7"
+    assert commands[1][0] == 'multiply' and commands[1][1] == 14, "Second step should be multiplication with result 14" 

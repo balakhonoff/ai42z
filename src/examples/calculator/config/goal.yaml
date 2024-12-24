@@ -1,0 +1,6 @@
+goal:
+  description: "Calculate (4 + 3) * 2"
+  success_criteria:
+    - "Must use add operation first"
+    - "Must use multiply operation with result of addition"
+    - "Final result should be 14" 
