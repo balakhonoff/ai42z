@@ -1,0 +1,53 @@
+{
+    "functions": [
+      {
+        "id": 0,
+        "name": "tweet_search",
+        "description": "Search trending tweets about AI agents",
+        "parameters": {
+          "count": {
+            "type": "integer",
+            "description": "Number of tweets to fetch"
+          }
+        }
+      },
+      {
+        "id": 1,
+        "name": "tweet_reply",
+        "description": "Reply to a tweet with friendly and smart response",
+        "parameters": {
+          "tweet_id": {
+            "type": "string",
+            "description": "ID of the tweet to reply to"
+          },
+          "text": {
+            "type": "string",
+            "description": "Reply text"
+          }
+        }
+      },
+      {
+        "id": 2,
+        "name": "tweet_sleep",
+        "description": "Sleep for the specified number of seconds",
+        "parameters": {
+          "seconds": {
+            "type": "integer",
+            "description": "Number of seconds to sleep"
+          }
+        }
+      },
+      {
+        "id": 3,
+        "name": "tweet_check_stats",
+        "description": "Check likes and replies for a given tweet",
+        "parameters": {
+          "tweet_id": {
+            "type": "string",
+            "description": "ID of the tweet to check"
+          }
+        }
+      }      
+    ]
+  }
+  
