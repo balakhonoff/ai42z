@@ -167,3 +167,8 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 cookies.json
+replied_tweets.txt
+seen_tweets.txt
+last_reset.txt
+reply_count.txt
+.DS_Store

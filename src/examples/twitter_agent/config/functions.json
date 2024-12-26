@@ -25,29 +25,7 @@
             "description": "Reply text"
           }
         }
-      },
-      {
-        "id": 2,
-        "name": "tweet_sleep",
-        "description": "Sleep for the specified number of seconds",
-        "parameters": {
-          "seconds": {
-            "type": "integer",
-            "description": "Number of seconds to sleep"
-          }
-        }
-      },
-      {
-        "id": 3,
-        "name": "tweet_check_stats",
-        "description": "Check likes and replies for a given tweet",
-        "parameters": {
-          "tweet_id": {
-            "type": "string",
-            "description": "ID of the tweet to check"
-          }
-        }
-      }      
+      }   
     ]
   }
   
