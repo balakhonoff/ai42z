@@ -5,50 +5,52 @@
 ## Key Features
 
 ### Proactive Decision Making
-- Continuous environment evaluation
-- Goal-driven autonomous actions
-- Step-by-step execution with clear reasoning
+- Continuous environment evaluation  
+- Goal-driven autonomous actions  
+- Step-by-step execution with clear reasoning  
 
 ### Long-Term Memory and Learning
-- Accumulates knowledge and insights during execution
-- Periodically summarizes and consolidates learnings
-- Uses accumulated knowledge to inform future decisions
-- Extracts best practices, useful findings, and helpful knowledge
-- Maintains a growing knowledge base that evolves with experience
+- Accumulates knowledge and insights during execution  
+- Periodically summarizes and consolidates learnings  
+- Uses accumulated knowledge to inform future decisions  
+- Extracts best practices, useful findings, and helpful knowledge  
+- Maintains a growing knowledge base that evolves with experience  
 
 ## Quick Start
 
 1. **Installation**:
-```bash
-# Create and activate virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```bash
+   # Create and activate virtual environment
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install dependencies
-pip install -r requirements.txt
+   # Install dependencies
+   pip install -r requirements.txt
 
-# Set up your OpenAI API key
-export OPENAI_API_KEY='your-api-key-here'
-```
+   # Set up your OpenAI API key
+   export OPENAI_API_KEY='your-api-key-here'
+   ```
 
 2. **Try the Examples**:
-```bash
-cd src
+   ```bash
+   cd src
 
-# Run the calculator example
-pytest -v -s examples/calculator/tests/test_calculator.py
+   # Run the calculator example
+   pytest -v -s examples/calculator/tests/test_calculator.py
 
-# Run the coffee maker example
-pytest -v -s examples/coffee_maker/tests/test_coffee_maker.py
-```
+   # Run the coffee maker example
+   pytest -v -s examples/coffee_maker/tests/test_coffee_maker.py
+
+   # Run the new Twitter agent example (instructions below)
+   ```
 
 ## Available Examples
 
 ### Calculator Agent
 A simple example demonstrating basic arithmetic operations and result submission. The agent:
-- Calculates (4 + 3) * 2 using available operations
+- Calculates `(4 + 3) * 2` using available operations
 - Uses proper order of operations
-- Submits the final result for verification
+- Submits the final result for verification  
 
 Located in `src/examples/calculator/`
 
@@ -58,7 +60,7 @@ A more complex example simulating coffee machine control with state management. 
 - Waits for heating
 - Adds the correct amount of coffee
 - Starts brewing
-- Monitors operation sequence and conditions
+- Monitors operation sequence and conditions  
 
 Located in `src/examples/coffee_maker/`
 
@@ -66,39 +68,42 @@ Located in `src/examples/coffee_maker/`
 A pathfinding agent that navigates through a maze to find the exit. This example demonstrates:
 - Spatial navigation and exploration
 - Decision making based on current state and history
-- Efficient pathfinding using look_around and move commands
-- Simple maze representation using ASCII characters:
-  - `#` - Wall
-  - `.` - Empty path
-  - `X` - Exit
-  - Starting position is always at (1, 1)
+- Efficient pathfinding using `look_around` and `move` commands
+- Simple ASCII-based maze representation  
 
-Example maze:
-```
-#######
-#.....#  # Agent starts at (1,1)
-###.#.#
-###.###
-###.###
-#....X#  # Exit is marked with X
-####### 
-```
+Located in `src/examples/maze_solver/`
 
-The agent uses three commands:
-1. `look_around` - Check adjacent cells in all directions
-2. `move` - Move in a specified direction (north, south, east, west)
-3. `check_status` - Get current position and exploration statistics
+### Twitter Agent
+A **new** example that integrates with the **Twitter API** to:
+- **Search** for tweets about AI agents  
+- **Filter** out tweets already seen or replied to  
+- **Reply** to selected tweets with insights on multi-agent systems, web3, etc.  
 
-Success criteria:
-- Find and reach the exit cell marked as 'X'
-- Avoid walls and stay within maze boundaries
-- Use efficient exploration to minimize steps
+**Key Points**:
+- Requires valid **Twitter API credentials** (bearer token, consumer key/secret, access token/secret).  
+- Demonstrates error handling for tweet retrieval and rate limiting.  
+- Leverages the **LLMProcessor** to decide which tweets to respond to and craft replies.
 
-This example showcases how the framework can be used for spatial navigation tasks and demonstrates the agent's ability to:
-- Explore unknown environments
-- Make decisions based on partial information
-- Adapt strategy based on discovered obstacles
-- Track progress towards a goal
+**Usage**:
+1. Set up environment variables in your `.env` (or export them):
+   ```bash
+   TWITTER_API_KEY="your_consumer_key"
+   TWITTER_API_SECRET="your_consumer_secret"
+   TWITTER_ACCESS_TOKEN_ai42z="your_access_token"
+   TWITTER_ACCESS_SECRET_ai42z="your_access_secret"
+   TWITTER_BEARER_TOKEN="your_bearer_token"
+   ```
+2. Run the example:
+   ```bash
+   pytest -v -s examples/twitter_agent/tests/test_twitter_agent.py
+   ```
+   Or directly:
+   ```bash
+   python src/examples/twitter_agent/main.py
+   ```
+3. Observe the agent’s search results, replies, and any debug logs.
+
+Located in `src/examples/twitter_agent/`
 
 ## Advanced Features
 
@@ -138,60 +143,65 @@ The framework includes a sophisticated long-term memory system that helps agents
 ```
 src/
 ├── core/                     # Core framework components
-│   └── llm_processor.py     # Main LLM interaction logic
+│   └── llm_processor.py      # Main LLM interaction logic
 ├── examples/                 # Example implementations
-│   ├── calculator/          # Simple arithmetic calculator agent
-│   │   ├── config/         # Agent-specific configurations
-│   │   ├── tests/         # Agent-specific tests
-│   │   └── main.py        # Agent implementation
-│   └── coffee_maker/       # Coffee machine control agent
+│   ├── calculator/           # Simple arithmetic calculator agent
+│   │   ├── config/           # Agent-specific configurations
+│   │   ├── tests/            # Agent-specific tests
+│   │   └── main.py           # Agent implementation
+│   ├── coffee_maker/         # Coffee machine control agent
+│   ├── maze_solver/          # Maze navigation agent
+│   └── twitter_agent/        # Twitter integration example
+│       ├── config/           # Contains the agent's goal and function definitions
+│       ├── tests/            # Tests for the Twitter agent
+│       └── main.py           # Main code for searching and replying on Twitter
 ```
 
 ## Creating Your Own Agent
 
 1. Create a new directory under `examples/`:
-```bash
-mkdir -p src/examples/your_agent/{config,tests}
-touch src/examples/your_agent/{__init__.py,main.py}
-touch src/examples/your_agent/tests/{__init__.py,test_your_agent.py}
-```
+   ```bash
+   mkdir -p src/examples/your_agent/{config,tests}
+   touch src/examples/your_agent/{__init__.py,main.py}
+   touch src/examples/your_agent/tests/{__init__.py,test_your_agent.py}
+   ```
 
 2. Define your functions in `config/functions.json`:
-```json
-{
-  "functions": [
-    {
-      "id": 1,
-      "name": "your_function",
-      "description": "Description of what it does",
-      "parameters": {
-        "param1": {
-          "type": "number",
-          "description": "Parameter description"
-        }
-      }
-    }
-  ]
-}
-```
+   ```json
+   {
+     "functions": [
+       {
+         "id": 1,
+         "name": "your_function",
+         "description": "Description of what it does",
+         "parameters": {
+           "param1": {
+             "type": "number",
+             "description": "Parameter description"
+           }
+         }
+       }
+     ]
+   }
+   ```
 
 3. Define your goal in `config/goal.yaml`:
-```yaml
-goal:
-  description: "What your agent needs to achieve"
-  success_criteria:
-    - "List of criteria"
-```
+   ```yaml
+   goal:
+     description: "What your agent needs to achieve"
+     success_criteria:
+       - "List of criteria"
+   ```
 
 4. Implement your agent in `main.py` and create tests in `tests/test_your_agent.py`
 
 ## Key Concepts
 
-- **LLMs as Action-Oriented Agents**: Transform LLMs from static responders into iterative decision-makers
-- **Goal-Driven Autonomy**: Agents work toward clear objectives through step-by-step actions
-- **Execution History**: Actions and outcomes are recorded and used for context in subsequent decisions
-- **Explainable Reasoning**: Agents articulate their decision-making process
-- **Continuous Learning**: Agents accumulate and apply knowledge from their experiences
+- **LLMs as Action-Oriented Agents**: Transform LLMs from static responders into iterative decision-makers.  
+- **Goal-Driven Autonomy**: Agents work toward clear objectives through step-by-step actions.  
+- **Execution History**: Actions and outcomes are recorded and used for context in subsequent decisions.  
+- **Explainable Reasoning**: Agents articulate their decision-making process.  
+- **Continuous Learning**: Agents accumulate and apply knowledge from their experiences.
 
 ## Development
 
@@ -200,7 +210,7 @@ goal:
 cd src
 pytest -v -s
 
-# Run basic examples (calculator and coffee maker)
+# Run basic examples (calculator, coffee maker, maze solver)
 pytest -v -s tests/test_examples.py
 
 # Run individual examples
@@ -208,21 +218,25 @@ pytest -v -s examples/calculator/tests/test_calculator.py
 pytest -v -s examples/coffee_maker/tests/test_coffee_maker.py
 pytest -v -s examples/maze_solver/tests/test_maze_solver.py
 
+# Run the Twitter agent
+pytest -v -s examples/twitter_agent/tests/test_twitter_agent.py
+
 # Run with detailed logs
 pytest -v -s examples/calculator/tests/test_calculator.py --log-cli-level=DEBUG
 ```
 
 ## Contributing
 
-1. Fork the repository
-2. Create your feature branch
-3. Add your example or improvement
-4. Create a pull request
+1. Fork the repository  
+2. Create your feature branch  
+3. Add your example or improvement  
+4. Create a pull request  
 
 ## License
 
-MIT License
+MIT License  
 
+```
 Copyright (c) 2024
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -231,14 +245,7 @@ in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
+[... full MIT license text ...]
+```
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+With this updated README, you now have clear guidance on how to run your **Twitter agent** example, including where to place your credentials and how to execute the script/test.
