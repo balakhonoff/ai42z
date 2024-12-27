@@ -92,14 +92,23 @@ class TwitterAPIWrapper:
             raise TwitterAPIException(f"Error initializing Tweepy client: {e}")
 
     async def search_tweet(self, query: str, sort_order: str, count: int):
-        """Use 'search_recent_tweets' to find tweets about AI agents."""
+        """
+        Use 'search_recent_tweets' to find tweets about AI agents.
+        'referenced_tweets.id.author_id' ensures we can load the full objects
+        for any retweets/quote tweets, so we can see if they have media.
+        """
         try:
             max_results = min(count, 100)
             response = self.client.search_recent_tweets(
                 query=query,
                 max_results=max_results,
-                tweet_fields=["id", "text", "created_at", "lang", "public_metrics"],
-                expansions=["author_id", "attachments.media_keys", "referenced_tweets.id"],
+                tweet_fields=["id", "text", "created_at", "lang", "public_metrics", "referenced_tweets"],
+                expansions=[
+                    "author_id",
+                    "attachments.media_keys",
+                    "referenced_tweets.id",
+                    "referenced_tweets.id.author_id"
+                ],
                 user_fields=["id", "name", "username", "description", "public_metrics", "verified"]
             )
             if not response or not response.data:
@@ -107,6 +116,8 @@ class TwitterAPIWrapper:
 
             tweets_data = response.data
             includes = response.includes if response.includes else {}
+            # We can get the original tweet(s) if it's a RT/quote in includes["tweets"].
+            referenced_tweets_map = {tw.id: tw for tw in includes.get("tweets", [])}
             users = {u["id"]: u for u in includes.get("users", [])}
 
             results = []
@@ -114,21 +125,34 @@ class TwitterAPIWrapper:
                 author_id = td.author_id
                 user_data = users.get(author_id) if author_id else None
 
-                # Check if media is present
-                media_in_tweet = False
+                # Check if the main tweet has media
+                main_tweet_has_media = False
                 if td.attachments and "media_keys" in td.attachments:
                     if len(td.attachments["media_keys"]) > 0:
-                        media_in_tweet = True
+                        main_tweet_has_media = True
+
+                # Check if referenced tweet(s) have media
+                referenced_has_media = False
+                if td.referenced_tweets:
+                    for ref in td.referenced_tweets:
+                        ref_tweet_obj = referenced_tweets_map.get(ref.id)
+                        if ref_tweet_obj and ref_tweet_obj.attachments:
+                            if "media_keys" in ref_tweet_obj.attachments and len(ref_tweet_obj.attachments["media_keys"]) > 0:
+                                referenced_has_media = True
+                                break
+
+                has_any_media = main_tweet_has_media or referenced_has_media
 
                 # Convert Tweepy Tweet to a dictionary
                 tweet_data = {
                     "id": td.id,
                     "text": td.text,
-                    "created_at": td.created_at,  # We'll handle conversion after
+                    "created_at": td.created_at,
                     "lang": td.lang,
                     "public_metrics": td.public_metrics,
                 }
-                results.append(MockTweet(tweet_data, user_data, media_in_tweet))
+
+                results.append(MockTweet(tweet_data, user_data, has_any_media))
 
             return results
 
@@ -136,12 +160,17 @@ class TwitterAPIWrapper:
             raise TwitterAPIException(f"Error searching tweets: {e}")
 
     async def get_tweet_by_id(self, tweet_id: str):
-        """Fetch a single tweet by ID."""
+        """Fetch a single tweet by ID and check if it or references have media."""
         print(f"[DEBUG] get_tweet_by_id: Attempting to retrieve tweet {tweet_id}")
         try:
             response = self.client.get_tweet(
                 id=tweet_id,
-                expansions=["author_id", "attachments.media_keys", "referenced_tweets.id"],
+                expansions=[
+                    "author_id",
+                    "attachments.media_keys",
+                    "referenced_tweets.id",
+                    "referenced_tweets.id.author_id"
+                ],
                 tweet_fields=["id", "text", "created_at", "lang", "public_metrics", "referenced_tweets"],
                 user_fields=["id", "name", "username", "description", "public_metrics", "verified"]
             )
@@ -152,15 +181,27 @@ class TwitterAPIWrapper:
                 return None
 
             tweet_obj = response.data
-
-            # 'includes' is separate from the main tweet object
             includes = response.includes if response.includes else {}
+            ref_tweets_map = {tw.id: tw for tw in includes.get("tweets", [])}
             users = {u["id"]: u for u in includes.get("users", [])}
 
-            media_in_tweet = False
+            # Check main tweet for media
+            main_tweet_has_media = False
             if tweet_obj.attachments and "media_keys" in tweet_obj.attachments:
                 if len(tweet_obj.attachments["media_keys"]) > 0:
-                    media_in_tweet = True
+                    main_tweet_has_media = True
+
+            # Check referenced tweets for media
+            referenced_has_media = False
+            if tweet_obj.referenced_tweets:
+                for ref in tweet_obj.referenced_tweets:
+                    ref_tweet = ref_tweets_map.get(ref.id)
+                    if ref_tweet and ref_tweet.attachments:
+                        if "media_keys" in ref_tweet.attachments and len(ref_tweet.attachments["media_keys"]) > 0:
+                            referenced_has_media = True
+                            break
+
+            media_in_tweet = main_tweet_has_media or referenced_has_media
 
             tweet_data = {
                 "id": tweet_obj.id,
@@ -260,17 +301,18 @@ async def should_sleep() -> tuple[bool, float]:
         return True, max(0, sleep_seconds)
     return False, 0
 
-# -------------------------------------------------------------------------
-# Functions that interact with Twitter (using TwitterAPIWrapper)
-# -------------------------------------------------------------------------
+# Helper for JSON serialization
 def _datetime_to_str(dt):
     """Convert a datetime to ISO-format string or leave it alone if not datetime."""
     if isinstance(dt, datetime):
         return dt.isoformat()
     return dt
 
+# -------------------------------------------------------------------------
+# Functions that interact with Twitter (using TwitterAPIWrapper)
+# -------------------------------------------------------------------------
 async def tweet_search(params: Dict[str, Any], processor: LLMProcessor = None) -> Dict[str, Any]:
-    """Search for tweets about AI agents."""
+    """Search for tweets about AI agents, skipping any with media."""
     count = params.get("count", 5)
     try:
         replied_tweets = await load_tweet_ids(REPLIED_TWEETS_FILE)
@@ -281,11 +323,10 @@ async def tweet_search(params: Dict[str, Any], processor: LLMProcessor = None) -
 
         tweet_data = []
         for t in tweets:
-            # Skip if already replied, seen, or has media
+            # Skip if this tweet (or references) has media, or if it's already seen/replied
             if t.id in replied_tweets or t.id in seen_tweets or len(t.media) > 0:
                 continue
 
-            # Convert datetime to string so we can JSON-serialize
             created_str = _datetime_to_str(t.created_at)
 
             tweet_info = {
@@ -314,7 +355,7 @@ async def tweet_search(params: Dict[str, Any], processor: LLMProcessor = None) -
             # Mark tweet as seen
             await save_tweet_id(SEEN_TWEETS_FILE, t.id)
 
-            # Stop once we've collected enough
+            # Stop if we've collected enough
             if len(tweet_data) >= count:
                 break
 
@@ -330,7 +371,7 @@ async def tweet_search(params: Dict[str, Any], processor: LLMProcessor = None) -
         }
 
 async def tweet_reply(params: Dict[str, Any], processor: LLMProcessor = None) -> Dict[str, Any]:
-    """Reply to a tweet using the Twitter API."""
+    """Reply to a tweet using the Twitter API, skipping if it has media."""
     should_sleep_now, sleep_seconds = await should_sleep()
     if should_sleep_now:
         hours = sleep_seconds / 3600
@@ -341,7 +382,6 @@ async def tweet_reply(params: Dict[str, Any], processor: LLMProcessor = None) ->
 
     tweet_id = params.get("tweet_id")
     text = params.get("text", "")
-
     print(f"[DEBUG] tweet_reply called with tweet_id={tweet_id} and text={text}")
 
     try:
@@ -351,6 +391,13 @@ async def tweet_reply(params: Dict[str, Any], processor: LLMProcessor = None) ->
             return {
                 "status": "error",
                 "message": f"Tweet not found with ID {tweet_id}"
+            }
+
+        # Double-check if it (or its references) has media
+        if len(tweet.media) > 0:
+            return {
+                "status": "skipped",
+                "message": f"Tweet {tweet_id} (or references) has media. Skipping reply."
             }
 
         # Post the reply
