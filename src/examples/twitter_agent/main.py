@@ -460,9 +460,9 @@ async def tweet_reply(params: Dict[str, Any], processor: LLMProcessor = None) ->
         }
 
 # -------------------------------------------------------------------------
-# tweet_sleep function
+# sleep function
 # -------------------------------------------------------------------------
-async def tweet_sleep(params: Dict[str, Any], processor: LLMProcessor = None) -> Dict[str, Any]:
+async def sleep(params: Dict[str, Any], processor: LLMProcessor = None) -> Dict[str, Any]:
     """Wait for specified number of seconds (real sleep)."""
     seconds = params.get("seconds", 10)
     await asyncio.sleep(seconds)
@@ -509,11 +509,11 @@ async def initialize_processor():
         return await tweet_reply(params, processor=proc)
 
     async def wrapped_sleep(params):
-        return await tweet_sleep(params, processor=proc)
+        return await sleep(params, processor=proc)
 
     proc.register_function("tweet_search", wrapped_search)
     proc.register_function("tweet_reply", wrapped_reply)
-    proc.register_function("tweet_sleep", wrapped_sleep)
+    proc.register_function("sleep", wrapped_sleep)
 
     return proc
 

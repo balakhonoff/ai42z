@@ -25,6 +25,17 @@
             "description": "Reply text"
           }
         }
+      },
+      {
+        "id": 2,
+        "name": "sleep",
+        "description": "Sleep for the specified number of seconds",
+        "parameters": {
+          "seconds": {
+            "type": "integer",
+            "description": "Number of seconds to sleep"
+          }
+        }
       }   
     ]
   }

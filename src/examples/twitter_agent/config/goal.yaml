@@ -118,4 +118,4 @@ instructions:
     - "Aim to educate, inspire, and encourage responsible innovation across AI + blockchain ecosystems."
 
   limitations:
-    - "Use tweet_sleep function after each reply for at least 30 seconds"
+    - "IMPORTANT: If you got rate-limited or such - use sleep function for 20 minutes (1200 seconds)"
