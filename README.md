@@ -16,6 +16,56 @@
 - Extracts best practices, useful findings, and helpful knowledge  
 - Maintains a growing knowledge base that evolves with experience  
 
+## Planned Features
+
+### Enhanced Memory Architecture
+- Persistent long-term memory storage across sessions
+- Hierarchical memory organization with categorization
+- Ability to prune and consolidate outdated information
+- Cross-session learning and knowledge transfer
+
+### Graceful Interruption Handling
+- Support for pausing and resuming agent operations
+- Safe state preservation during unexpected shutdowns
+- Ability to handle external interruptions without losing progress
+- Graceful cleanup of resources during interruption
+
+### Modern Tools Integration
+- Migration from function-based to tool-based architecture
+- Enhanced error handling and validation
+- Improved type safety and documentation
+- Better support for async operations and streaming
+
+### Streamlined Configuration
+- Single YAML configuration file for all settings
+- Dynamic configuration reloading
+- Environment-specific configurations
+- Simplified setup process for new agents
+
+### Visual Input Processing
+- Support for image analysis and understanding
+- Multi-modal reasoning combining text and images
+- Visual state tracking and change detection
+- Image-based decision making capabilities
+
+### System Integration
+- Safe and controlled access to computer resources
+- File system operations with proper permissions
+- Network access with security controls
+- Integration with system services and APIs
+
+### Goal Progress Tracking
+- Real-time monitoring of goal completion status
+- Progress visualization and metrics
+- Dynamic goal adjustment based on conditions
+- Clear success/failure criteria evaluation
+
+### Action Feedback System
+- Detailed outcome analysis for each action
+- Learning from successful and failed attempts
+- Performance metrics and improvement suggestions
+- Historical action effectiveness tracking
+
 ## Quick Start
 
 1. **Installation**:
@@ -231,21 +281,3 @@ pytest -v -s examples/calculator/tests/test_calculator.py --log-cli-level=DEBUG
 2. Create your feature branch  
 3. Add your example or improvement  
 4. Create a pull request  
-
-## License
-
-MIT License  
-
-```
-Copyright (c) 2024
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-[... full MIT license text ...]
-```
-
-With this updated README, you now have clear guidance on how to run your **Twitter agent** example, including where to place your credentials and how to execute the script/test.
