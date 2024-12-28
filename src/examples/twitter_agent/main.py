@@ -347,16 +347,17 @@ def _datetime_to_str(dt):
 # Twikit-based tweet_search function
 # -------------------------------------------------------------------------
 async def tweet_search(params: Dict[str, Any], processor: LLMProcessor = None) -> Dict[str, Any]:
-    """Use Twikit for searching tweets about AI agents, skipping any with media."""
+    """Use Twikit for searching tweets based on the provided query, skipping any with media."""
     count = params.get("count", 5)
+    query = params.get("query", "AI agents")  # Default to "AI agents" if no query provided
     try:
         replied_tweets = await load_tweet_ids(REPLIED_TWEETS_FILE)
         seen_tweets = await load_tweet_ids(SEEN_TWEETS_FILE)
 
         # Twikit-based search
         twikit_results = await processor.twikit_search_client.search_tweet_twiki(
-            "AI agents",
-            "Latest",
+            query,
+            "Top",
             count=count * 2
         )
 

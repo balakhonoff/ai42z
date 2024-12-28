@@ -3,8 +3,12 @@
       {
         "id": 0,
         "name": "tweet_search",
-        "description": "Search trending tweets about AI agents",
+        "description": "Search trending tweets based on a custom query",
         "parameters": {
+          "query": {
+            "type": "string",
+            "description": "The search query to find relevant tweets"
+          },
           "count": {
             "type": "integer",
             "description": "Number of tweets to fetch"
