@@ -1,6 +1,6 @@
-# ai42z - The First Self-Learning Framework for Autonomous AI Agents
+# ai42z - A Framework for Building Self-Learning Autonomous AI Agents
 
-**ai42z** is a groundbreaking framework that enables Large Language Models (LLMs) to function as truly autonomous, self-learning AI agents. Unlike traditional frameworks that simply execute predefined actions, ai42z agents continuously learn from their experiences, building and refining their knowledge base over time.
+**ai42z** is a groundbreaking framework for building autonomous AI agents that can learn from their experiences. Unlike traditional frameworks where agents simply execute predefined actions, agents built with ai42z continuously learn from their interactions, building and refining their knowledge base over time. The framework provides built-in mechanisms for knowledge accumulation, insight extraction, and adaptive decision-making that you can leverage in your autonomous agents.
 
 ## What Makes ai42z Different?
 
